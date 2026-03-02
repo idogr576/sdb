@@ -187,12 +187,34 @@ void breakpoint_op(tracee *tracee, char *cmd)
 
 void help_op(tracee *tracee, char *cmd)
 {
-    char c;
-    FILE *fp = fopen("./docs/help.txt", "r");
-    while ((c = fgetc(fp)) != EOF)
-    {
-        putchar(c);
-    }
+    PRINT("Available Commands:\n");
+    PRINT("----------------------------------------------\n");
+    PRINT(GREEN("r") " - start program\n");
+    PRINT(GREEN("c") " - continue execution of program\n");
+    PRINT(GREEN("n") " - step to next instructio\n");
+    PRINT(GREEN("x") " - examine memory and registers\n");
+    PRINT(GREEN("p") " - print variables and registers value\n");
+    PRINT(GREEN("b") " - set and unset breakpoints\n");
+    PRINT(GREEN("i") " - show info on symbols / registers / other\n");
+    PRINT(GREEN("q") " - quit sdb\n");
+    PRINT(GREEN("h") " - print this help message\n");
+    PRINT("\n\n");
+    PRINT(YELLOW("Examples\n"));
+    PRINT(YELLOW("----------------------------------------------\n"));
+    PRINT(BLUE("p/d $rax") YELLOW("                // print register rax values in decimal\n"));
+    PRINT(BLUE("p main") YELLOW("                  // print main symbol address\n"));
+    PRINT("\n");
+    PRINT(BLUE("x/10i main") YELLOW("              // display 10 instructions starting from address main\n"));
+    PRINT(BLUE("x/1x 0x64ffdbb32004") YELLOW("     // display word in hex at the given address in memory\n"));
+    PRINT(BLUE("x/100s 0x64ffdbb32004") YELLOW("   // display the string at address, at most 100 chars\n"));
+    PRINT("\n");
+    PRINT(BLUE("b main") YELLOW("                  // set breakpoint at address main\n"));
+    PRINT(BLUE("b") YELLOW("                       // list all breakpoints\n"));
+    PRINT(BLUE("bd main") YELLOW("                 // delete breakpoint at main\n"));
+    PRINT("\n");
+    PRINT(BLUE("i s") YELLOW("                     // show info on all available symbols\n"));
+    PRINT(BLUE("i r") YELLOW("                     // show info on all available registers\n"));
+    PRINT("\n");
 }
 
 void quit_op(tracee *tracee, char *cmd)
