@@ -30,3 +30,13 @@ cmake src
 cmake --build .
 ```
 A new binary `./sdb` will be created, you're good to go!
+
+## Build With Docker
+Whether you like docker or your machine is incompatible with the requirements, a `Dockerfile` is available for build.
+```bash
+docker build -t sdb .
+docker run -it --rm sdb
+```
+You will find yourself in a directory with the source code and `./sdb` compiled.
+
+On top of that, the `sdb` binary exists in `PATH`.
