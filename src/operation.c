@@ -14,6 +14,8 @@
 #include "utils/data.h"
 #include "print.h"
 
+#define FMTSIZE 32
+
 void run_op(tracee *tracee, char *cmd)
 {
     if (tracee->state.start)
@@ -57,10 +59,14 @@ void examine_op(tracee *tracee, char *cmd)
 {
     LOG_DEBUG("operation EXAMINE");
     char buf[BUFSIZ] = {0};
+    char safe_fmt_string[FMTSIZE];
     char fmt = 'x';
     int n = 1;
+
+    // safely make the fmt string to prevert overflow on buf
+    snprintf(safe_fmt_string, sizeof(safe_fmt_string), "x/%%d%%c %%%ds", sizeof(buf) - 1);
     // try to read the input
-    if (sscanf(cmd, "x/%d%c %s", &n, &fmt, buf) != 3 || !buf)
+    if (sscanf(cmd, safe_fmt_string, &n, &fmt, buf) != 3 || !buf)
     {
         LOG_ERROR("cannot read cmd to buffer");
         PRINT(RED("usage: x/<n><fmt> <value>\n"));
@@ -121,12 +127,16 @@ void print_op(tracee *tracee, char *cmd)
 {
     LOG_DEBUG("operation PRINT");
     char buf[BUFSIZ] = {0};
-    char fullfmt[BUFSIZ] = {0};
+    char output[BUFSIZ] = {0};
+    char safe_fmt_string[FMTSIZE];
     char fmt = 'x';
+    // safely make the fmt string to prevert overflow on buf
+    snprintf(safe_fmt_string, sizeof(safe_fmt_string), "p/%%c %%%ds", sizeof(buf) - 1);
     // try to read the input
-    if (sscanf(cmd, "p/%c %s", &fmt, buf) != 2)
+    if (sscanf(cmd, safe_fmt_string, &fmt, buf) != 2)
     {
-        sscanf(cmd, "p %s", buf);
+        snprintf(safe_fmt_string, sizeof(safe_fmt_string), "p %%%ds", sizeof(buf) - 1);
+        sscanf(cmd, safe_fmt_string, buf);
     }
     if (!buf)
     {
@@ -143,13 +153,13 @@ void print_op(tracee *tracee, char *cmd)
 
     if (fmt == 'd')
     {
-        strncpy(fullfmt, BLUE("%s") " = %ld\n", BUFSIZ);
+        strncpy(output, BLUE("%s") " = %ld\n", BUFSIZ);
     }
     else
     {
-        strncpy(fullfmt, BLUE("%s") " = 0x%lx\n", BUFSIZ);
+        strncpy(output, BLUE("%s") " = 0x%lx\n", BUFSIZ);
     }
-    PRINT(fullfmt, buf, val);
+    PRINT(output, buf, val);
 }
 
 void breakpoint_op(tracee *tracee, char *cmd)
