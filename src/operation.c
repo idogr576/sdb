@@ -64,9 +64,9 @@ void examine_op(tracee *tracee, char *cmd)
     int n = 1;
 
     // safely make the fmt string to prevert overflow on buf
-    snprintf(safe_fmt_string, sizeof(safe_fmt_string), "x/%%d%%c %%%ds", sizeof(buf) - 1);
+    snprintf(safe_fmt_string, sizeof(safe_fmt_string), "x/%%d%%c %%%lds", sizeof(buf) - 1);
     // try to read the input
-    if (sscanf(cmd, safe_fmt_string, &n, &fmt, buf) != 3 || !buf)
+    if (sscanf(cmd, safe_fmt_string, &n, &fmt, buf) != 3 || !strlen(buf))
     {
         LOG_ERROR("cannot read cmd to buffer");
         PRINT(RED("usage: x/<n><fmt> <value>\n"));
@@ -131,14 +131,14 @@ void print_op(tracee *tracee, char *cmd)
     char safe_fmt_string[FMTSIZE];
     char fmt = 'x';
     // safely make the fmt string to prevert overflow on buf
-    snprintf(safe_fmt_string, sizeof(safe_fmt_string), "p/%%c %%%ds", sizeof(buf) - 1);
+    snprintf(safe_fmt_string, sizeof(safe_fmt_string), "p/%%c %%%lds", sizeof(buf) - 1);
     // try to read the input
     if (sscanf(cmd, safe_fmt_string, &fmt, buf) != 2)
     {
-        snprintf(safe_fmt_string, sizeof(safe_fmt_string), "p %%%ds", sizeof(buf) - 1);
+        snprintf(safe_fmt_string, sizeof(safe_fmt_string), "p %%%lds", sizeof(buf) - 1);
         sscanf(cmd, safe_fmt_string, buf);
     }
-    if (!buf)
+    if (!strlen(buf))
     {
         LOG_ERROR("cannot read cmd to buffer");
         PRINT(RED("usage: p/<fmt> <value>, default <fmt> is 'x'\n"));
