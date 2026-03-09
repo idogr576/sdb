@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
         {
             if (tracee.state.start)
             {
-                get_current_opcode(&tracee, opcode);
+                get_current_opcode(&tracee, opcode, sizeof(opcode));
                 printf("\n%s\n", opcode);
             }
             cmd_op = read_command(&tracee, ">>");

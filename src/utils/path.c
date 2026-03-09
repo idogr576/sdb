@@ -19,7 +19,7 @@ bool binary_path_exists(char *binary_path)
 
         while (token != NULL)
         {
-            sprintf(search_binary_path, "%s/%s", token, binary_path);
+            snprintf(search_binary_path, sizeof(search_binary_path), "%s/%s", token, binary_path);
             // check if the file exists and has execute permissions
             if (!access(search_binary_path, X_OK))
             {

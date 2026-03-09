@@ -9,7 +9,7 @@
 #include "tracee.h"
 #include "print.h"
 
-void get_current_opcode(tracee *tracee, char *opcode)
+void get_current_opcode(tracee *tracee, char *opcode, size_t maxlen)
 {
     reg_t rip = get_program_counter(tracee);
     char buffer[OPCODE_MAX_REPR];
@@ -42,7 +42,7 @@ void get_current_opcode(tracee *tracee, char *opcode)
                                     instruction.operand_count_visible, buffer, sizeof(buffer),
                                     runtime_address, ZYAN_NULL);
 
-    sprintf(opcode, BLUE("%016" PRIX64) YELLOW("  %s"), runtime_address, buffer);
+    snprintf(opcode, maxlen, BLUE("%016" PRIX64) YELLOW("  %s"), runtime_address, buffer);
 }
 
 void x86_64_disassemble(tracee *tracee, GElf_Addr addr, size_t opcodes)
