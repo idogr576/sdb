@@ -103,7 +103,7 @@ void examine_op(tracee *tracee, char *cmd)
         if (fmt == 'x')
         {
             uint32_t *p = (uint32_t *)data;
-            PRINT(BLUE("%016" PRIX64) " 0x%08lx\n", val.addr + i * sizeof(*p), p[i]);
+            PRINT(BLUE("%016" PRIX64) " %#08lx\n", val.addr + i * sizeof(*p), p[i]);
         }
         if (fmt == 'd')
         {
@@ -113,7 +113,7 @@ void examine_op(tracee *tracee, char *cmd)
         if (fmt == 'b')
         {
             uint8_t *p = (uint8_t *)data;
-            PRINT(BLUE("%016" PRIX64) " 0x%02hhx\n", val.addr + i * sizeof(*p), p[i]);
+            PRINT(BLUE("%016" PRIX64) " %#02hhx\n", val.addr + i * sizeof(*p), p[i]);
         }
         if (fmt == 'c')
         {
@@ -156,14 +156,14 @@ void print_op(tracee *tracee, char *cmd)
         if (fmt == 'd')
             strncpy(output, BLUE("%s") " = %llu\n", sizeof(output));
         else
-            strncpy(output, BLUE("%s") " = 0x%llx\n", sizeof(output));
+            strncpy(output, BLUE("%s") " = %#llx\n", sizeof(output));
     }
     else
     {
         if (fmt == 'd')
             strncpy(output, BLUE("%s") " = %ld\n", sizeof(output));
         else
-            strncpy(output, BLUE("%s") " = 0x%lx\n", sizeof(output));
+            strncpy(output, BLUE("%s") " = %#lx\n", sizeof(output));
     }
     PRINT(output, buf, val);
 }
@@ -260,7 +260,7 @@ void info_op(tracee *tracee, char *cmd)
         for (size_t i = 0; i < tracee->symtab.size; i++)
         {
             GElf_Addr sym_value = tracee->symtab.symbols[i].st_value;
-            PRINT(BLUE("0x%016lx") " %s\n", base_addr + sym_value, tracee->symtab.sym_names[i]);
+            PRINT(BLUE("%#016lx") " %s\n", base_addr + sym_value, tracee->symtab.sym_names[i]);
         }
     }
     else if (type == 'r')
@@ -269,7 +269,7 @@ void info_op(tracee *tracee, char *cmd)
         reg_t *reg = (reg_t *)&regs;
         for (size_t i = 0; i < COUNT_REGS(regs); i++, reg++)
         {
-            PRINT(BLUE("%8s") " = 0x%llu\n", defined_regs[i], *reg);
+            PRINT(BLUE("%8s") " = %#llx\n", defined_regs[i], *reg);
         }
     }
     else
@@ -315,7 +315,7 @@ void set_op(tracee *tracee, char *cmd)
     case TYPE_SYMBOL:
         // set a single bytes to this address
         uint8_t byte = (uint8_t)val.addr;
-        PRINT(BLUE("attempting to set byte 0x%lx to address 0x%lx") "\n", byte, var.addr);
+        PRINT(BLUE("attempting to set byte %#lx to address %#lx") "\n", byte, var.addr);
         singlebyte_memset(tracee, var.addr, byte);
         PRINT(GREEN("success!") "\n");
         break;
@@ -323,7 +323,7 @@ void set_op(tracee *tracee, char *cmd)
         // skipping the '$' prefix of register name
         if (!set_register_value(tracee, varname + 1, val.reg))
         {
-            PRINT(GREEN("successfully set %s to %llu") "\n", varname, val.reg);
+            PRINT(GREEN("successfully set %s to %#llx") "\n", varname, val.reg);
         }
         break;
     case TYPE_INVALID:

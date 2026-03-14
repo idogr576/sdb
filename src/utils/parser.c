@@ -49,7 +49,7 @@ GElf_Addr resolve_address(ValueType type, pid_t pid, symtab *symtab, char *addr_
         }
 
         GElf_Addr addr = symtab_get_dyn_sym_addr(pid, sym);
-        LOG_DEBUG("%s = 0x%lx\n", addr_repr, addr);
+        LOG_DEBUG("%s = %#lx\n", addr_repr, addr);
         return addr;
     }
 error:

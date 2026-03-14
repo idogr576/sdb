@@ -33,7 +33,7 @@ reg_t get_register_value(tracee *tracee, char *reg_name)
     {
         if (!strcmp(reg_name, defined_regs[i]))
         {
-            LOG_DEBUG("matching register %s, value is 0x%llx\n", defined_regs[i], *(regp + i));
+            LOG_DEBUG("matching register %s, value is %#llx\n", defined_regs[i], *(regp + i));
             return *(regp + i);
         }
     }
