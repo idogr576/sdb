@@ -6,17 +6,17 @@
 #include "elf/symbols.h"
 #include "utils/parser.h"
 
-ValueType identify_addr_type(char *addr_repr, symtab *symtab)
+ValueType identify_value_type(char *value_str, symtab *symtab)
 {
-    if (isdigit(addr_repr[0]))
+    if (isdigit(value_str[0]))
     {
         return TYPE_ADDRESS;
     }
-    if (addr_repr[0] == '$')
+    if (value_str[0] == '$')
     {
         return TYPE_REGISTER;
     }
-    return symtab_find_sym(symtab, addr_repr) == NULL ? TYPE_INVALID : TYPE_SYMBOL;
+    return symtab_find_sym(symtab, value_str) == NULL ? TYPE_INVALID : TYPE_SYMBOL;
 }
 
 GElf_Addr parse_direct_address(char *addr_repr)
@@ -59,7 +59,7 @@ error:
 Value resolve_value(tracee *tracee, char *addr_repr)
 {
     Value val;
-    ValueType type = identify_addr_type(addr_repr, &tracee->symtab);
+    ValueType type = identify_value_type(addr_repr, &tracee->symtab);
     // check if register or address
     switch (type)
     {

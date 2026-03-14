@@ -6,7 +6,7 @@
 #include "registers.h"
 #include "tracee.h"
 
-#define INVALID_ADDRESS 0
+#define INVALID_ADDRESS (GElf_Addr)-1
 #define INVALID_VALUE \
     (Value) { .addr = INVALID_ADDRESS }
 
@@ -40,7 +40,7 @@ typedef union Value
     reg_t reg;
 } Value;
 
-ValueType identify_addr_type(char *addr_repr, symtab *symtab);
+ValueType identify_value_type(char *value_str, symtab *symtab);
 
 GElf_Addr parse_direct_address(char *addr_repr);
 

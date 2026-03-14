@@ -93,6 +93,10 @@ command_op read_command(tracee *tracee, char *prefix)
         cmd_op.func_op = info_op;
         break;
 
+    case 's':
+        cmd_op.func_op = set_op;
+        break;
+
     default:
         cmd_op.func_op = NULL;
     }

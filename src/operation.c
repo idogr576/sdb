@@ -128,7 +128,7 @@ void print_op(tracee *tracee, char *cmd)
     LOG_DEBUG("operation PRINT");
     char buf[BUFSIZ] = {0};
     char output[BUFSIZ] = {0};
-    char safe_fmt_string[FMTSIZE];
+    char safe_fmt_string[FMTSIZE] = {0};
     char fmt = 'x';
     // safely make the fmt string to prevert overflow on buf
     snprintf(safe_fmt_string, sizeof(safe_fmt_string), "p/%%c %%%lds", sizeof(buf) - 1);
@@ -147,17 +147,23 @@ void print_op(tracee *tracee, char *cmd)
     Value val = resolve_value(tracee, buf);
     if (IS_INVALID_VALUE(val))
     {
-        PRINT(RED("Invalid value to print!\nNot a symbol, register or direct address\n"));
+        PRINT(RED("invalid value to print!\nNot a symbol, register or direct address\n"));
         return;
     }
-
-    if (fmt == 'd')
+    ValueType type = identify_value_type(buf, &tracee->symtab);
+    if (type == TYPE_REGISTER)
     {
-        strncpy(output, BLUE("%s") " = %ld\n", BUFSIZ);
+        if (fmt == 'd')
+            strncpy(output, BLUE("%s") " = %llu\n", sizeof(output));
+        else
+            strncpy(output, BLUE("%s") " = 0x%llx\n", sizeof(output));
     }
     else
     {
-        strncpy(output, BLUE("%s") " = 0x%lx\n", BUFSIZ);
+        if (fmt == 'd')
+            strncpy(output, BLUE("%s") " = %ld\n", sizeof(output));
+        else
+            strncpy(output, BLUE("%s") " = 0x%lx\n", sizeof(output));
     }
     PRINT(output, buf, val);
 }
@@ -199,15 +205,16 @@ void help_op(tracee *tracee, char *cmd)
 {
     PRINT("Available Commands:\n");
     PRINT("----------------------------------------------\n");
-    PRINT(GREEN("r") " - start program\n");
-    PRINT(GREEN("c") " - continue execution of program\n");
-    PRINT(GREEN("n") " - step to next instructio\n");
-    PRINT(GREEN("x") " - examine memory and registers\n");
-    PRINT(GREEN("p") " - print variables and registers value\n");
-    PRINT(GREEN("b") " - set and unset breakpoints\n");
-    PRINT(GREEN("i") " - show info on symbols / registers / other\n");
-    PRINT(GREEN("q") " - quit sdb\n");
-    PRINT(GREEN("h") " - print this help message\n");
+    PRINT(GREEN("r") "   - start program\n");
+    PRINT(GREEN("c") "   - continue execution of program\n");
+    PRINT(GREEN("n") "   - step to next instructio\n");
+    PRINT(GREEN("x") "   - examine memory and registers\n");
+    PRINT(GREEN("p") "   - print variables and registers value\n");
+    PRINT(GREEN("b") "   - set and unset breakpoints\n");
+    PRINT(GREEN("i") "   - show info on symbols / registers / other\n");
+    PRINT(GREEN("set") " - set value to address in memory or register\n");
+    PRINT(GREEN("q") "   - quit sdb\n");
+    PRINT(GREEN("h") "   - print this help message\n");
     PRINT("\n\n");
     PRINT(YELLOW("Examples\n"));
     PRINT(YELLOW("----------------------------------------------\n"));
@@ -224,6 +231,10 @@ void help_op(tracee *tracee, char *cmd)
     PRINT("\n");
     PRINT(BLUE("i s") YELLOW("                     // show info on all available symbols\n"));
     PRINT(BLUE("i r") YELLOW("                     // show info on all available registers\n"));
+    PRINT("\n");
+    PRINT(BLUE("set main 0xcc") YELLOW("           // set byte 0xcc for address of main\n"));
+    PRINT(BLUE("set $rax 0") YELLOW("              // set value of $rax to be 0\n"));
+    PRINT(BLUE("set $rax $rbx") YELLOW("           // set value of $rax to be as $rbx\n"));
     PRINT("\n");
 }
 
@@ -258,7 +269,7 @@ void info_op(tracee *tracee, char *cmd)
         reg_t *reg = (reg_t *)&regs;
         for (size_t i = 0; i < COUNT_REGS(regs); i++, reg++)
         {
-            PRINT(BLUE("%8s") " = 0x%lx\n", defined_regs[i], *reg);
+            PRINT(BLUE("%8s") " = 0x%llu\n", defined_regs[i], *reg);
         }
     }
     else
@@ -266,4 +277,58 @@ void info_op(tracee *tracee, char *cmd)
         PRINT(RED("undefined option after i(nfo)\n"));
     }
     PRINT("\n");
+}
+
+void set_op(tracee *tracee, char *cmd)
+{
+    LOG_DEBUG("SET OPERATION\n");
+    char varname[BUFSIZ] = {0};
+    char value[BUFSIZ] = {0};
+    char safe_fmt_string[FMTSIZE] = {0};
+    // safely make the fmt string to prevert overflow on buffers
+    snprintf(safe_fmt_string, sizeof(safe_fmt_string), "set %%%lds %%%lds", sizeof(varname) - 1, sizeof(value) - 1);
+    LOG_DEBUG("fmt string is \"%s\"\n", safe_fmt_string);
+    // try to read the input
+    if (sscanf(cmd, safe_fmt_string, varname, value) != 2)
+    {
+        PRINT(RED("usage: set <variable> <value>") "\n");
+        return;
+    }
+    LOG_DEBUG("varname = %s, value = %s\n", varname, value);
+    Value var = resolve_value(tracee, varname);
+    if (IS_INVALID_VALUE(var))
+    {
+        PRINT(RED("invalid variable to set!\nNot a symbol, register or numeric value\n"));
+        return;
+    }
+    Value val = resolve_value(tracee, value);
+    if (IS_INVALID_VALUE(val))
+    {
+        PRINT(RED("invalid value to set!\nNot a symbol, register or numeric value\n"));
+        return;
+    }
+    ValueType type = identify_value_type(varname, &tracee->symtab);
+
+    switch (type)
+    {
+    case TYPE_ADDRESS:
+    case TYPE_SYMBOL:
+        // set a single bytes to this address
+        uint8_t byte = (uint8_t)val.addr;
+        PRINT(BLUE("attempting to set byte 0x%lx to address 0x%lx") "\n", byte, var.addr);
+        singlebyte_memset(tracee, var.addr, byte);
+        PRINT(GREEN("success!") "\n");
+        break;
+    case TYPE_REGISTER:
+        // skipping the '$' prefix of register name
+        if (!set_register_value(tracee, varname + 1, val.reg))
+        {
+            PRINT(GREEN("successfully set %s to %llu") "\n", varname, val.reg);
+        }
+        break;
+    case TYPE_INVALID:
+    default:
+        // this code should never be reached. it it does, there is a bug
+        LOG_ERROR(RED("this log should not appear. please check the code integrity") "\n");
+    }
 }

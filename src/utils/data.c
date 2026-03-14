@@ -47,3 +47,18 @@ size_t read_tracee_mem(tracee *tracee, GElf_Addr addr, uint8_t *data, size_t n)
     }
     return read_size;
 }
+
+uint8_t singlebyte_memset(tracee *tracee, GElf_Addr addr, uint8_t value)
+{
+    uint8_t orig = 0;
+    union
+    {
+        void *word;
+        uint8_t byte;
+    } data;
+    data.word = (void *)ptrace(PTRACE_PEEKDATA, tracee->pid, addr, 0);
+    orig = data.byte;
+    data.byte = value;
+    ptrace(PTRACE_POKEDATA, tracee->pid, addr, data.word);
+    return orig;
+}
