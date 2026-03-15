@@ -6,7 +6,7 @@
 #include "elf/symbols.h"
 #include "utils/parser.h"
 
-ValueType identify_value_type(char *value_str, symtab *symtab)
+ValueType identify_value_type(tracee *tracee, char *value_str)
 {
     if (isdigit(value_str[0]))
     {
@@ -16,7 +16,7 @@ ValueType identify_value_type(char *value_str, symtab *symtab)
     {
         return TYPE_REGISTER;
     }
-    return symtab_find_sym(symtab, value_str) == NULL ? TYPE_INVALID : TYPE_SYMBOL;
+    return symtab_find_sym(&tracee->symtab, value_str) == NULL ? TYPE_INVALID : TYPE_SYMBOL;
 }
 
 GElf_Addr parse_direct_address(char *addr_repr)
@@ -33,7 +33,7 @@ GElf_Addr parse_direct_address(char *addr_repr)
     return INVALID_ADDRESS;
 }
 
-GElf_Addr resolve_address(ValueType type, pid_t pid, symtab *symtab, char *addr_repr)
+GElf_Addr resolve_address(tracee *tracee, ValueType type, char *addr_repr)
 {
     if (type == TYPE_ADDRESS)
     {
@@ -42,13 +42,13 @@ GElf_Addr resolve_address(ValueType type, pid_t pid, symtab *symtab, char *addr_
     }
     if (type == TYPE_SYMBOL)
     {
-        GElf_Sym *sym = symtab_find_sym(symtab, addr_repr);
+        GElf_Sym *sym = symtab_find_sym(&tracee->symtab, addr_repr);
         if (!sym)
         {
             goto error;
         }
 
-        GElf_Addr addr = symtab_get_dyn_sym_addr(pid, sym);
+        GElf_Addr addr = symtab_get_dyn_sym_addr(tracee->pid, sym);
         LOG_DEBUG("%s = %#lx\n", addr_repr, addr);
         return addr;
     }
@@ -59,7 +59,7 @@ error:
 Value resolve_value(tracee *tracee, char *addr_repr)
 {
     Value val;
-    ValueType type = identify_value_type(addr_repr, &tracee->symtab);
+    ValueType type = identify_value_type(tracee, addr_repr);
     // check if register or address
     switch (type)
     {
@@ -77,7 +77,7 @@ Value resolve_value(tracee *tracee, char *addr_repr)
 
     case TYPE_ADDRESS:
     case TYPE_SYMBOL:
-        GElf_Addr addr = resolve_address(type, tracee->pid, &tracee->symtab, addr_repr);
+        GElf_Addr addr = resolve_address(tracee, type, addr_repr);
         if (addr == INVALID_ADDRESS)
         {
             LOG_ERROR("cannot resolve address %s", addr_repr);

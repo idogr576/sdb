@@ -40,10 +40,10 @@ typedef union Value
     reg_t reg;
 } Value;
 
-ValueType identify_value_type(char *value_str, symtab *symtab);
+ValueType identify_value_type(tracee *tracee, char *value_str);
 
 GElf_Addr parse_direct_address(char *addr_repr);
 
-GElf_Addr resolve_address(ValueType type, pid_t pid, symtab *symtab, char *addr_repr);
+GElf_Addr resolve_address(tracee *tracee, ValueType type, char *addr_repr);
 
 Value resolve_value(tracee *tracee, char *addr_repr);

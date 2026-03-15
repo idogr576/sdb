@@ -150,7 +150,7 @@ void print_op(tracee *tracee, char *cmd)
         PRINT(RED("invalid value to print!\nNot a symbol, register or direct address\n"));
         return;
     }
-    ValueType type = identify_value_type(buf, &tracee->symtab);
+    ValueType type = identify_value_type(tracee, buf);
     if (type == TYPE_REGISTER)
     {
         if (fmt == 'd')
@@ -307,7 +307,7 @@ void set_op(tracee *tracee, char *cmd)
         PRINT(RED("invalid value to set!\nNot a symbol, register or numeric value\n"));
         return;
     }
-    ValueType type = identify_value_type(varname, &tracee->symtab);
+    ValueType type = identify_value_type(tracee, varname);
 
     switch (type)
     {
