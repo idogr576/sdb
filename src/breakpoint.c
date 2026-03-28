@@ -31,28 +31,44 @@ void breakpoint_list(tracee *tracee)
     PRINT("\n");
 }
 
-void breakpoint_set(tracee *tracee, GElf_Addr addr)
+void breakpoint_set_verbose(tracee *tracee, GElf_Addr addr, bool verbose)
 {
     if (hmgetp_null(tracee->breakpoints, addr))
     {
-        PRINT(RED("breakpoint at %#lx already set\n"), addr);
+        if (verbose)
+            PRINT(RED("breakpoint at %#lx already set") "\n", addr);
         return;
     }
     uint8_t orig = singlebyte_memset(tracee, addr, BP_OPCODE);
     hmput(tracee->breakpoints, addr, orig);
     LOG_DEBUG("there are now %d breakpoints\n", hmlen(tracee->breakpoints));
+    if (verbose)
+        PRINT(GREEN("added new breakpoint at %#lx") "\n", addr);
 }
 
-void breakpoint_unset(tracee *tracee, GElf_Addr addr)
+void breakpoint_set(tracee *tracee, GElf_Addr addr)
+{
+    breakpoint_set_verbose(tracee, addr, true);
+}
+
+void breakpoint_unset_verbose(tracee *tracee, GElf_Addr addr, bool verbose)
 {
     hm_t e = hmgetp_null(tracee->breakpoints, addr);
     if (!e)
     {
-        PRINT(RED("did not find breakpoint at %#lx") "\n", addr);
+        if (verbose)
+            PRINT(RED("did not find breakpoint at %#lx") "\n", addr);
         return;
     }
     singlebyte_memset(tracee, addr, e->value);
     hmdel(tracee->breakpoints, addr);
+    if (verbose)
+        PRINT(GREEN("deleted breakpoint at %#lx") "\n", addr);
+}
+
+void breakpoint_unset(tracee *tracee, GElf_Addr addr)
+{
+    breakpoint_unset_verbose(tracee, addr, true);
 }
 
 void breakpoint_step(tracee *tracee)

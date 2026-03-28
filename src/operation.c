@@ -77,7 +77,7 @@ void next_op(tracee *tracee, char *cmd)
     }
     // step 1: set a temporary breakpoint at the next instruction address
     GElf_Addr next_rip = get_program_counter(tracee) + length;
-    breakpoint_set(tracee, next_rip);
+    breakpoint_set_verbose(tracee, next_rip, false);
     LOG_DEBUG("set temporary breakpoint");
 
     // step 2: continue until this address is reached (+int3 single-byte offset)
@@ -90,7 +90,7 @@ void next_op(tracee *tracee, char *cmd)
     tracee->state.is_running = !WIFSTOPPED(wstatus);
 
     // step 3: unset the temporary breakpoint
-    breakpoint_unset(tracee, next_rip);
+    breakpoint_unset_verbose(tracee, next_rip, false);
     LOG_DEBUG("unset temporary breakpoint");
 
     // step 4: revert rip 1 bytes backwards (-int3 single-byte offset)
@@ -228,7 +228,6 @@ void breakpoint_op(tracee *tracee, char *cmd)
         else
         {
             breakpoint_set(tracee, val.addr);
-            PRINT(GREEN("added new breakpoint at %#lx") "\n", val.addr);
         }
     }
     if (cmd[1] == 'd')
@@ -241,7 +240,6 @@ void breakpoint_op(tracee *tracee, char *cmd)
         else
         {
             breakpoint_unset(tracee, val.addr);
-            PRINT(GREEN("deleted breakpoint at %#lx") "\n", val.addr);
         }
     }
 }
