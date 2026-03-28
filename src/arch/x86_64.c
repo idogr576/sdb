@@ -9,14 +9,17 @@
 #include "tracee.h"
 #include "print.h"
 
-void get_current_opcode(tracee *tracee, char *opcode, size_t maxlen)
+/*
+write to given buffer the disassembled x86_64 instruction
+return the instruction length in bytes
+*/
+int get_next_instruction(tracee *tracee, char *buffer, size_t maxlen)
 {
     reg_t rip = get_program_counter(tracee);
-    char buffer[OPCODE_MAX_REPR];
     if (!rip)
     {
         LOG_ERROR("cannot access register rip");
-        return;
+        return 0;
     }
     ZyanU64 runtime_address = rip;
     ZyanU8 data[OPCODE_MAX_SIZE] = {0};
@@ -38,11 +41,13 @@ void get_current_opcode(tracee *tracee, char *opcode, size_t maxlen)
     ZydisDecoderDecodeFull(&decoder, data + offset, sizeof(data) - offset, &instruction, operands);
 
     // Format the instruction into our buffer
+    char formatted[OPCODE_MAX_REPR];
     ZydisFormatterFormatInstruction(&formatter, &instruction, operands,
-                                    instruction.operand_count_visible, buffer, sizeof(buffer),
+                                    instruction.operand_count_visible, formatted, sizeof(formatted),
                                     runtime_address, ZYAN_NULL);
 
-    snprintf(opcode, maxlen, BLUE("%016" PRIX64) YELLOW("  %s"), runtime_address, buffer);
+    snprintf(buffer, maxlen, BLUE("%016" PRIX64) YELLOW("  %s"), runtime_address, formatted);
+    return instruction.length;
 }
 
 void x86_64_disassemble(tracee *tracee, GElf_Addr addr, size_t opcodes)

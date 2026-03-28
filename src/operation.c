@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/ptrace.h>
+#include <sys/wait.h>
 #include "logger.h"
 #include <string.h>
 #include <stdbool.h>
@@ -39,14 +40,14 @@ void continue_op(tracee *tracee, char *cmd)
         PRINT(RED("start execution with \"r\"\n"));
         return;
     }
-    tracee->state.is_running = true;
     breakpoint_step(tracee);
     ptrace(PTRACE_CONT, tracee->pid, 0, 0);
+    tracee->state.is_running = true;
 }
 
-void next_op(tracee *tracee, char *cmd)
+void step_op(tracee *tracee, char *cmd)
 {
-    LOG_DEBUG("operation STEP");
+    LOG_DEBUG("STEP OPERATION");
     if (tracee->state.start && !tracee->state.is_running)
     {
         breakpoint_step(tracee);
@@ -55,11 +56,46 @@ void next_op(tracee *tracee, char *cmd)
     }
 }
 
+/* Go to next instruction but donʻt dive into functions. */
+void next_op(tracee *tracee, char *cmd)
+{
+    LOG_DEBUG("NEXT OPERATION");
+    char instruction[OPCODE_MAX_REPR] = {0};
+    int length = get_next_instruction(tracee, instruction, sizeof(instruction));
+
+    // check if we see a call instruction
+    if (!strstr(instruction, "call"))
+    {
+        step_op(tracee, cmd);
+        return;
+    }
+    // step 1: set a temporary breakpoint at the next instruction address
+    GElf_Addr next_rip = get_program_counter(tracee) + length;
+    breakpoint_set(tracee, next_rip);
+    LOG_DEBUG("set temporary breakpoint");
+
+    // step 2: continue until this address is reached (+int3 single-byte offset)
+    int wstatus;
+    while (next_rip + 1 != get_program_counter(tracee))
+    {
+        continue_op(tracee, cmd);
+        waitpid(tracee->pid, &wstatus, 0);
+    }
+    tracee->state.is_running = !WIFSTOPPED(wstatus);
+
+    // step 3: unset the temporary breakpoint
+    breakpoint_unset(tracee, next_rip);
+    LOG_DEBUG("unset temporary breakpoint");
+
+    // step 4: revert rip 1 bytes backwards (-int3 single-byte offset)
+    set_register_value(tracee, "rip", next_rip);
+}
+
 void examine_op(tracee *tracee, char *cmd)
 {
     LOG_DEBUG("operation EXAMINE");
     char buf[BUFSIZ] = {0};
-    char safe_fmt_string[FMTSIZE];
+    char safe_fmt_string[FMTSIZE] = {0};
     char fmt = 'x';
     int n = 1;
 
@@ -185,6 +221,7 @@ void breakpoint_op(tracee *tracee, char *cmd)
         else
         {
             breakpoint_set(tracee, addr.addr);
+            PRINT(GREEN("added new breakpoint at %#lx") "\n", addr);
         }
     }
     if (cmd[1] == 'd')
@@ -197,6 +234,7 @@ void breakpoint_op(tracee *tracee, char *cmd)
         else
         {
             breakpoint_unset(tracee, addr.addr);
+            PRINT(GREEN("deleted breakpoint at %#lx") "\n", addr.addr);
         }
     }
 }
@@ -207,7 +245,8 @@ void help_op(tracee *tracee, char *cmd)
     PRINT("----------------------------------------------\n");
     PRINT(GREEN("r") "   - start program\n");
     PRINT(GREEN("c") "   - continue execution of program\n");
-    PRINT(GREEN("n") "   - step to next instructio\n");
+    PRINT(GREEN("s") "   - go to next instruction\n");
+    PRINT(GREEN("n") "   - go to next instruction but step over functions\n");
     PRINT(GREEN("x") "   - examine memory and registers\n");
     PRINT(GREEN("p") "   - print variables and registers value\n");
     PRINT(GREEN("b") "   - set and unset breakpoints\n");

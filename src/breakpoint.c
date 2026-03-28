@@ -40,7 +40,6 @@ void breakpoint_set(tracee *tracee, GElf_Addr addr)
     }
     uint8_t orig = singlebyte_memset(tracee, addr, BP_OPCODE);
     hmput(tracee->breakpoints, addr, orig);
-    PRINT(GREEN("added new breakpoint at %#lx\n"), addr);
     LOG_DEBUG("there are now %d breakpoints\n", hmlen(tracee->breakpoints));
 }
 
@@ -49,12 +48,11 @@ void breakpoint_unset(tracee *tracee, GElf_Addr addr)
     hm_t e = hmgetp_null(tracee->breakpoints, addr);
     if (!e)
     {
-        PRINT(RED("did not find breakpoint at %#lx\n"), addr);
+        PRINT(RED("did not find breakpoint at %#lx") "\n", addr);
         return;
     }
     singlebyte_memset(tracee, addr, e->value);
     hmdel(tracee->breakpoints, addr);
-    PRINT(GREEN("deleted breakpoint at %#lx\n"), addr);
 }
 
 void breakpoint_step(tracee *tracee)

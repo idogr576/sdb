@@ -94,7 +94,7 @@ command_op read_command(tracee *tracee, char *prefix)
         break;
 
     case 's':
-        cmd_op.func_op = set_op;
+        cmd_op.func_op = (strlen(cmd_op.cmdline) == 1 ? step_op : set_op);
         break;
 
     default:

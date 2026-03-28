@@ -67,15 +67,15 @@ int main(int argc, char *argv[])
         ptrace(PTRACE_CONT, tracee.pid, 0, 0);
 
         // start the main loop
-        char opcode[OPCODE_MAX_REPR] = {0};
+        char instruction[OPCODE_MAX_REPR] = {0};
         command_op cmd_op;
         cli_init();
         do
         {
             if (tracee.state.start)
             {
-                get_current_opcode(&tracee, opcode, sizeof(opcode));
-                printf("\n%s\n", opcode);
+                get_next_instruction(&tracee, instruction, sizeof(instruction));
+                printf("\n%s\n", instruction);
             }
             cmd_op = read_command(&tracee, ">>");
             if (cmd_op.func_op)
