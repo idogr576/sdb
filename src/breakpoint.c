@@ -12,9 +12,6 @@
 #include "print.h"
 #include "utils/data.h"
 
-#define BP_OPCODE 0xCC
-#define BP_OPCODE_SIZE 1
-
 void breakpoint_init(tracee *tracee)
 {
     LOG_DEBUG("initialize breakpoint hashmap");

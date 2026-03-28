@@ -82,7 +82,7 @@ void next_op(tracee *tracee, char *cmd)
 
     // step 2: continue until this address is reached (+int3 single-byte offset)
     int wstatus;
-    while (next_rip + 1 != get_program_counter(tracee))
+    while (next_rip + BP_OPCODE_SIZE != get_program_counter(tracee))
     {
         continue_op(tracee, cmd);
         waitpid(tracee->pid, &wstatus, 0);

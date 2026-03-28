@@ -5,6 +5,9 @@
 
 #include "tracee.h"
 
+#define BP_OPCODE 0xCC
+#define BP_OPCODE_SIZE 1
+
 void breakpoint_init(tracee *tracee);
 
 void breakpoint_list(tracee *tracee);
