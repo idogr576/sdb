@@ -70,7 +70,7 @@ void next_op(tracee *tracee, char *cmd)
     int length = get_next_instruction(tracee, instruction, sizeof(instruction));
 
     // check if we see a call instruction
-    if (!strstr(instruction, "call"))
+    if (!IS_CALL_INS(instruction))
     {
         step_op(tracee, cmd);
         return;
